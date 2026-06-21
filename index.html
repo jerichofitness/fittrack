@@ -52,11 +52,11 @@
         button { background-color: var(--accent); border: none; font-weight: bold; cursor: pointer; transition: 0.2s; margin-top: 10px; }
         button:hover { opacity: 0.9; transform: translateY(-1px); }
         
-        /* CLEAN, UNIVERSAL WELCOME BACK BUTTON STYLE */
+        /* CLEAN WELCOME BUTTON STYLE */
         .massive-bypass-btn {
             background: linear-gradient(135deg, #0f172a, #1e293b);
-            border: 2px solid #475569;
-            color: var(--text-muted);
+            border: 2px solid var(--accent-green);
+            color: #a7f3d0;
             font-size: 1.05rem;
             padding: 15px;
             margin-top: 15px;
@@ -67,14 +67,9 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
-            transition: all 0.3s ease;
-        }
-        .massive-bypass-btn.has-data {
-            border-color: var(--accent-green);
-            color: #a7f3d0;
             cursor: pointer;
         }
-        .massive-bypass-btn.has-data:hover {
+        .massive-bypass-btn:hover {
             background: linear-gradient(135deg, #1e293b, #334155);
             border-color: var(--accent);
             color: #ffffff;
@@ -175,7 +170,7 @@
                 </div>
                 <button onclick="processOnboardingStepOne()">Evaluate Metrics & Next</button>
 
-                <button onclick="attemptSessionBypassResume()" id="dynamic-bypass-trigger-btn" class="massive-bypass-btn">👋 Welcome Back! Resume Session</button>
+                <button onclick="bypassSafariWipeCycle()" class="massive-bypass-btn">👋 Welcome Back! Enter Dashboard</button>
 
                 <div style="margin-top: 20px; border-top: 1px dashed #475569; padding-top: 15px; text-align: center;">
                     <p style="font-size: 0.8rem; margin-bottom: 8px;">Returning User? Restore your tracking data backup file:</p>
@@ -338,7 +333,6 @@
         let userProfile = { name: "User", age: 20, height: 177, weight: 53, bmi: 16.9, status: "Underweight Baseline Rating Index", goal: "Weight Gain", calorieTarget: 2800 };
         let totalDailyCaloriesLogged = 0;
         let scaleWeightHistoricalArray = [];
-        let internalDataStateCacheFound = false;
 
         function setCookieFallback(key, value) {
             const expireDate = new Date();
@@ -377,39 +371,11 @@
         });
 
         function evaluateLocalPlatformMemoryOnStartup() {
-            // STEP 1: PARSE SAFARI-SHIELD URL PARAMS FIRST
-            const urlSearchNodeParams = new URLSearchParams(window.location.search);
-            const parameterUserRegisteredFlag = urlSearchNodeParams.get('user');
-
             let cachedProfileString = null;
-
-            if (parameterUserRegisteredFlag === 'true') {
-                // Safari-shield interception code path: construct profile right out of address line vectors
-                const extractedProfileObj = {
-                    name: urlSearchNodeParams.get('name') || "User",
-                    age: parseInt(urlSearchNodeParams.get('age')) || 20,
-                    height: parseFloat(urlSearchNodeParams.get('h')) || 177,
-                    weight: parseFloat(urlSearchNodeParams.get('w')) || 53,
-                    bmi: urlSearchNodeParams.get('bmi') || "16.9",
-                    status: urlSearchNodeParams.get('st') || "Optimal Fuel Path Matrix",
-                    goal: urlSearchNodeParams.get('gl') || "Weight Gain",
-                    calorieTarget: parseInt(urlSearchNodeParams.get('tg')) || 2800
-                };
-                cachedProfileString = JSON.stringify(extractedProfileObj);
-                userProfile = extractedProfileObj;
-                
-                // Commit it locally immediately to repair the cache gap left by Safari
-                saveStateToBrowser();
-            } else {
-                // Standard configuration load if URL is clean
-                try { cachedProfileString = localStorage.getItem('publicPlatformUserProfileData'); } catch (e) {}
-                if (!cachedProfileString) { cachedProfileString = getCookieFallback('cookie_userProfile'); }
-            }
+            try { cachedProfileString = localStorage.getItem('publicPlatformUserProfileData'); } catch (e) {}
+            if (!cachedProfileString) { cachedProfileString = getCookieFallback('cookie_userProfile'); }
 
             if (cachedProfileString) {
-                internalDataStateCacheFound = true;
-                document.getElementById('dynamic-bypass-trigger-btn').classList.add('has-data');
-                
                 userProfile = JSON.parse(cachedProfileString);
                 
                 let cachedHistoryString = null;
@@ -441,19 +407,19 @@
 
                 launchDashboardMainWorkspace();
             } else {
-                internalDataStateCacheFound = false;
-                document.getElementById('dynamic-bypass-trigger-btn').classList.remove('has-data');
                 document.getElementById('onboarding-overlay').style.display = 'flex';
                 document.getElementById('app-content').style.display = 'none';
             }
         }
 
-        function attemptSessionBypassResume() {
-            if (internalDataStateCacheFound) {
-                launchDashboardMainWorkspace();
-            } else {
-                alert("🔒 Access Denied: No profile data found. Please fill out your metrics above first!");
+        // RESTORED STABLE DIRECT BYPASS PATHWAY FOR INSTANT SETUP SKIP
+        function bypassSafariWipeCycle() {
+            userProfile = { name: "User", age: 20, height: 177, weight: 53, bmi: 16.9, status: "Underweight Baseline Rating Index", goal: "Weight Gain", calorieTarget: 2800 };
+            if(scaleWeightHistoricalArray.length === 0) {
+                scaleWeightHistoricalArray.push({ date: getTodayDateStringKey(), val: 53 });
             }
+            saveStateToBrowser();
+            launchDashboardMainWorkspace();
         }
 
         function processOnboardingStepOne() {
@@ -463,7 +429,7 @@
             const weight = parseFloat(document.getElementById('ob-weight').value);
 
             if (!name || !age || !height || !weight) {
-                alert("Please fill out all fields.");
+                alert("Please fill out all bio form fields.");
                 return;
             }
 
@@ -514,26 +480,7 @@
                 scaleWeightHistoricalArray.push({ date: getTodayDateStringKey(), val: userProfile.weight });
             }
 
-            // DYNAMICALLY MODIFY BROWSING URL BAR IN THE PARENT WINDOW SEGMENT TO PERSIST SAFARI CLOSES
-            const shieldUrlParams = `?user=true&name=${encodeURIComponent(userProfile.name)}&age=${userProfile.age}&h=${userProfile.height}&w=${userProfile.weight}&bmi=${userProfile.bmi}&st=${encodeURIComponent(userProfile.status)}&gl=${encodeURIComponent(userProfile.goal)}&tg=${userProfile.calorieTarget}`;
-            window.history.replaceState(null, '', shieldUrlParams);
-
             saveStateToBrowser();
-            internalDataStateCacheFound = true;
-            launchDashboardMainWorkspace();
-        }
-
-        function bypassSafariWipeCycle() {
-            userProfile = { name: "User", age: 20, height: 177, weight: 53, bmi: 16.9, status: "Optimal Healthy Mass Profile", goal: "Weight Gain", calorieTarget: 2800 };
-            if(scaleWeightHistoricalArray.length === 0) {
-                scaleWeightHistoricalArray.push({ date: getTodayDateStringKey(), val: 53 });
-            }
-            
-            const shieldUrlParams = `?user=true&name=User&age=20&h=177&w=53&bmi=16.9&st=Optimal%20Mass&gl=Weight%20Gain&tg=2800`;
-            window.history.replaceState(null, '', shieldUrlParams);
-
-            saveStateToBrowser();
-            internalDataStateCacheFound = true;
             launchDashboardMainWorkspace();
         }
 
@@ -708,7 +655,7 @@
             const dynamicDownloadAnchorElement = document.createElement("a");
 
             dynamicDownloadAnchorElement.href = URL.createObjectURL(dataBlobElement);
-            dynamicDownloadAnchorElement.download = `${userProfile.name || 'FitTrack'}_fitness_backup.json`;
+            dynamicDownloadAnchorElement.download = `FitTrack_fitness_backup.json`;
             document.body.appendChild(dynamicDownloadAnchorElement);
             dynamicDownloadAnchorElement.click();
             document.body.removeChild(dynamicDownloadAnchorElement);
@@ -751,7 +698,7 @@
                     const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
                     document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
                 }
-                window.location.replace(window.location.pathname); // Clear out parameters upon full master wipe loops
+                window.location.reload();
             }
         }
     </script>
