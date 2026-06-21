@@ -19,12 +19,12 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         body { background-color: var(--bg-color); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
 
-        /* FULL SCREEN OVERLAY ONBOARDING WIZARD */
+        /* FULL SCREEN OVERLAY ONBOARDING WIZARD - FORCED TO FLEX DISPLAY BY DEFAULT */
         #onboarding-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
             background-color: var(--bg-color);
-            display: none; 
+            display: flex; 
             justify-content: center;
             align-items: center;
             z-index: 10000;
@@ -52,6 +52,7 @@
         button { background-color: var(--accent); border: none; font-weight: bold; cursor: pointer; transition: 0.2s; margin-top: 10px; }
         button:hover { opacity: 0.9; transform: translateY(-1px); }
         
+        /* CLEAN UNIVERSAL WELCOME BUTTON STYLE */
         .massive-bypass-btn {
             background: linear-gradient(135deg, #0f172a, #1e293b);
             border: 2px solid var(--accent-green);
@@ -68,12 +69,17 @@
             gap: 8px;
             cursor: pointer;
         }
+        .massive-bypass-btn:hover {
+            background: linear-gradient(135deg, #1e293b, #334155);
+            border-color: var(--accent);
+            color: #ffffff;
+        }
 
         .bmi-badge { background: #0f172a; padding: 15px; border-radius: 8px; border: 1px solid #334155; margin-bottom: 15px; text-align: center; }
         .bmi-number { font-size: 1.8rem; font-weight: bold; color: var(--accent-green); margin-bottom: 4px; }
         .bmi-status-text { font-size: 0.9rem; font-weight: bold; }
         
-        /* MAIN APPLICATION WORKSPACE */
+        /* MAIN APPLICATION WORKSPACE - HIDDEN BY DEFAULT */
         #app-content { display: none; padding: 20px; max-width: 1600px; width: 100%; margin: 0 auto; }
         header { text-align: center; padding: 15px 0; border-bottom: 1px solid #334155; margin-bottom: 25px; }
         header h1 { font-size: 1.8rem; color: var(--text-main); }
@@ -163,6 +169,7 @@
                     <input type="number" id="ob-weight" placeholder="e.g., 68">
                 </div>
                 <button onclick="processOnboardingStepOne()">Evaluate Metrics & Next</button>
+
                 <button onclick="bypassSafariWipeCycle()" class="massive-bypass-btn">👋 Welcome Back! Enter Dashboard</button>
 
                 <div style="margin-top: 20px; border-top: 1px dashed #475569; padding-top: 15px; text-align: center;">
@@ -184,7 +191,7 @@
                 <div class="form-field" id="goal-selection-container">
                     <label>Target Workspace Strategic Path Goal</label>
                     <select id="ob-goal">
-                    </select>
+                        </select>
                 </div>
                 
                 <button onclick="finalizeProfileSetup()">Complete Setup & Open Dashboard</button>
@@ -322,10 +329,8 @@
     </div>
 
     <script>
-        // SAFARI PERMANENT CORE RECOVERY OVERWRITE MATRIX
-        const safariDefaultProfile = { name: "User", age: 20, height: 177, weight: 53, bmi: 16.9, status: "Underweight Baseline Rating Index", goal: "Weight Gain", calorieTarget: 2800 };
-        
-        let userProfile = { name: "", age: 0, height: 0, weight: 0, bmi: 0, status: "", goal: "", calorieTarget: 2000 };
+        // CORE CONFIGS
+        let userProfile = { name: "User", age: 20, height: 177, weight: 53, bmi: 16.9, status: "Underweight Baseline Rating Index", goal: "Weight Gain", calorieTarget: 2800 };
         let totalDailyCaloriesLogged = 0;
         let scaleWeightHistoricalArray = [];
 
@@ -335,49 +340,9 @@
             document.cookie = `${key}=${encodeURIComponent(value)};expires=${expireDate.toUTCString()};path=/;SameSite=Lax`;
         }
 
-        document.addEventListener("DOMContentLoaded", function() {
-            evaluateLocalPlatformMemoryOnStartup();
-        });
-
-        function evaluateLocalPlatformMemoryOnStartup() {
-            let match = document.cookie.match(new RegExp('(^| )cookie_userProfile=([^;]+)'));
-            let cachedProfileString = localStorage.getItem('publicPlatformUserProfileData') || (match ? decodeURIComponent(match[2]) : null);
-
-            // SAFARI STRUCTURAL BYPASS: If tab closure totally cleared out storage, inject hardwired parameters as active backup targets
-            if (!cachedProfileString) {
-                userProfile = {...safariDefaultProfile};
-            } else {
-                userProfile = JSON.parse(cachedProfileString);
-            }
-
-            let matchHist = document.cookie.match(new RegExp('(^| )cookie_weightArray=([^;]+)'));
-            let cachedHistoryString = localStorage.getItem('publicPlatformWeightArrayData') || (matchHist ? decodeURIComponent(matchHist[2]) : null);
-            if (cachedHistoryString) scaleWeightHistoricalArray = JSON.parse(cachedHistoryString);
-            
-            let matchDate = document.cookie.match(new RegExp('(^| )cookie_dateKey=([^;]+)'));
-            let lastDateSavedString = localStorage.getItem('publicPlatformLastDateKey') || (matchDate ? decodeURIComponent(matchDate[2]) : null);
-            const todayKeyString = getTodayDateStringKey();
-            
-            if (lastDateSavedString && lastDateSavedString !== todayKeyString) {
-                totalDailyCaloriesLogged = 0;
-                document.getElementById('timeline-logger-list').innerHTML = '';
-                saveStateToBrowser();
-            } else {
-                let matchCal = document.cookie.match(new RegExp('(^| )cookie_calCount=([^;]+)'));
-                let calCountStr = localStorage.getItem('publicPlatformTotalDailyCaloriesCount') || (matchCal ? decodeURIComponent(matchCal[2]) : null);
-                totalDailyCaloriesLogged = parseInt(calCountStr) || 0;
-
-                let matchList = document.cookie.match(new RegExp('(^| )cookie_timelineHtml=([^;]+)'));
-                let timelineHtml = localStorage.getItem('publicPlatformDayEntriesListHTML') || (matchList ? decodeURIComponent(matchList[2]) : null);
-                document.getElementById('timeline-logger-list').innerHTML = timelineHtml || '';
-            }
-
-            if(scaleWeightHistoricalArray.length === 0) {
-                scaleWeightHistoricalArray.push({ date: getTodayDateStringKey(), val: userProfile.weight });
-            }
-
-            // Lock onto dashboard instantly, bypassing form resetting completely
-            launchDashboardMainWorkspace();
+        function getCookieFallback(key) {
+            const match = document.cookie.match(new RegExp('(^| )' + key + '=([^;]+)'));
+            return match ? decodeURIComponent(match[2]) : null;
         }
 
         function saveStateToBrowser() {
@@ -401,8 +366,64 @@
             setCookieFallback('cookie_dateKey', dateKeyStr);
         }
 
+        document.addEventListener("DOMContentLoaded", function() {
+            evaluateLocalPlatformMemoryOnStartup();
+        });
+
+        function evaluateLocalPlatformMemoryOnStartup() {
+            let cachedProfileString = null;
+            try { cachedProfileString = localStorage.getItem('publicPlatformUserProfileData'); } catch (e) {}
+            if (!cachedProfileString) { cachedProfileString = getCookieFallback('cookie_userProfile'); }
+
+            if (cachedProfileString) {
+                // If data exists, boot the dashboard straight away
+                userProfile = JSON.parse(cachedProfileString);
+                
+                let cachedHistoryString = null;
+                try { cachedHistoryString = localStorage.getItem('publicPlatformWeightArrayData'); } catch(e){}
+                if (!cachedHistoryString) { cachedHistoryString = getCookieFallback('cookie_weightArray'); }
+                if (cachedHistoryString) scaleWeightHistoricalArray = JSON.parse(cachedHistoryString);
+                
+                let lastDateSavedString = null;
+                try { lastDateSavedString = localStorage.getItem('publicPlatformLastDateKey'); } catch(e){}
+                if (!lastDateSavedString) { lastDateSavedString = getCookieFallback('cookie_dateKey'); }
+                
+                const todayKeyString = getTodayDateStringKey();
+                
+                if (lastDateSavedString && lastDateSavedString !== todayKeyString) {
+                    totalDailyCaloriesLogged = 0;
+                    document.getElementById('timeline-logger-list').innerHTML = '';
+                    saveStateToBrowser();
+                } else {
+                    let calCountStr = null;
+                    try { calCountStr = localStorage.getItem('publicPlatformTotalDailyCaloriesCount'); } catch(e){}
+                    if (!calCountStr) { calCountStr = getCookieFallback('cookie_calCount'); }
+                    totalDailyCaloriesLogged = parseInt(calCountStr) || 0;
+
+                    let timelineHtml = null;
+                    try { timelineHtml = localStorage.getItem('publicPlatformDayEntriesListHTML'); } catch(e){}
+                    if (!timelineHtml) { timelineHtml = getCookieFallback('cookie_timelineHtml'); }
+                    document.getElementById('timeline-logger-list').innerHTML = timelineHtml || '';
+                }
+
+                if(scaleWeightHistoricalArray.length === 0) {
+                    scaleWeightHistoricalArray.push({ date: getTodayDateStringKey(), val: userProfile.weight });
+                }
+
+                launchDashboardMainWorkspace();
+            } else {
+                // IF MEMORY IS COMPLETELY EMPTY -> Halt and force overlay card to stay visible!
+                document.getElementById('onboarding-overlay').style.display = 'flex';
+                document.getElementById('app-content').style.display = 'none';
+            }
+        }
+
+        // ONE-CLICK INSTANT BYPASS TRIGGER: Hardwires your exact settings instantly!
         function bypassSafariWipeCycle() {
-            userProfile = {...safariDefaultProfile};
+            userProfile = { name: "User", age: 20, height: 177, weight: 53, bmi: 16.9, status: "Underweight Baseline Rating Index", goal: "Weight Gain", calorieTarget: 2800 };
+            if(scaleWeightHistoricalArray.length === 0) {
+                scaleWeightHistoricalArray.push({ date: getTodayDateStringKey(), val: 53 });
+            }
             saveStateToBrowser();
             launchDashboardMainWorkspace();
         }
@@ -414,7 +435,7 @@
             const weight = parseFloat(document.getElementById('ob-weight').value);
 
             if (!name || !age || !height || !weight) {
-                alert("Please fill out all bio form fields.");
+                alert("Please fill out all fields.");
                 return;
             }
 
