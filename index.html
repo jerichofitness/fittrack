@@ -52,10 +52,10 @@
         button { background-color: var(--accent); border: none; font-weight: bold; cursor: pointer; transition: 0.2s; margin-top: 10px; }
         button:hover { opacity: 0.9; transform: translateY(-1px); }
         
-        /* THE SECURED SESSION RESUME BUTTON STYLING */
+        /* CLEAN, UNIVERSAL WELCOME BACK BUTTON STYLE */
         .massive-bypass-btn {
             background: linear-gradient(135deg, #0f172a, #1e293b);
-            border: 2px solid #475569; /* Default neutral gray style */
+            border: 2px solid #475569;
             color: var(--text-muted);
             font-size: 1.05rem;
             padding: 15px;
@@ -69,7 +69,6 @@
             gap: 8px;
             transition: all 0.3s ease;
         }
-        /* Active layout states if data cache is discovered */
         .massive-bypass-btn.has-data {
             border-color: var(--accent-green);
             color: #a7f3d0;
@@ -339,7 +338,7 @@
         let userProfile = { name: "User", age: 20, height: 177, weight: 53, bmi: 16.9, status: "Underweight Baseline Rating Index", goal: "Weight Gain", calorieTarget: 2800 };
         let totalDailyCaloriesLogged = 0;
         let scaleWeightHistoricalArray = [];
-        let internalDataStateCacheFound = false; // Security checking variable
+        let internalDataStateCacheFound = false;
 
         function setCookieFallback(key, value) {
             const expireDate = new Date();
@@ -378,12 +377,36 @@
         });
 
         function evaluateLocalPlatformMemoryOnStartup() {
+            // STEP 1: PARSE SAFARI-SHIELD URL PARAMS FIRST
+            const urlSearchNodeParams = new URLSearchParams(window.location.search);
+            const parameterUserRegisteredFlag = urlSearchNodeParams.get('user');
+
             let cachedProfileString = null;
-            try { cachedProfileString = localStorage.getItem('publicPlatformUserProfileData'); } catch (e) {}
-            if (!cachedProfileString) { cachedProfileString = getCookieFallback('cookie_userProfile'); }
+
+            if (parameterUserRegisteredFlag === 'true') {
+                // Safari-shield interception code path: construct profile right out of address line vectors
+                const extractedProfileObj = {
+                    name: urlSearchNodeParams.get('name') || "User",
+                    age: parseInt(urlSearchNodeParams.get('age')) || 20,
+                    height: parseFloat(urlSearchNodeParams.get('h')) || 177,
+                    weight: parseFloat(urlSearchNodeParams.get('w')) || 53,
+                    bmi: urlSearchNodeParams.get('bmi') || "16.9",
+                    status: urlSearchNodeParams.get('st') || "Optimal Fuel Path Matrix",
+                    goal: urlSearchNodeParams.get('gl') || "Weight Gain",
+                    calorieTarget: parseInt(urlSearchNodeParams.get('tg')) || 2800
+                };
+                cachedProfileString = JSON.stringify(extractedProfileObj);
+                userProfile = extractedProfileObj;
+                
+                // Commit it locally immediately to repair the cache gap left by Safari
+                saveStateToBrowser();
+            } else {
+                // Standard configuration load if URL is clean
+                try { cachedProfileString = localStorage.getItem('publicPlatformUserProfileData'); } catch (e) {}
+                if (!cachedProfileString) { cachedProfileString = getCookieFallback('cookie_userProfile'); }
+            }
 
             if (cachedProfileString) {
-                // EXPLICIT CONFIRMATION: True data found in memory registers
                 internalDataStateCacheFound = true;
                 document.getElementById('dynamic-bypass-trigger-btn').classList.add('has-data');
                 
@@ -418,7 +441,6 @@
 
                 launchDashboardMainWorkspace();
             } else {
-                // Clear state checker and display form configuration step
                 internalDataStateCacheFound = false;
                 document.getElementById('dynamic-bypass-trigger-btn').classList.remove('has-data');
                 document.getElementById('onboarding-overlay').style.display = 'flex';
@@ -426,14 +448,11 @@
             }
         }
 
-        // SECURED ENTRY RESUME ENFORCEMENT NODE
         function attemptSessionBypassResume() {
             if (internalDataStateCacheFound) {
-                // True profile cache verified. Allow instant loading skip.
                 launchDashboardMainWorkspace();
             } else {
-                // Deny unauthorized blank form access
-                alert("🔒 Access Denied: No previous session data found on this browser. Please fill out your target configuration profile parameters metrics above to create an account first!");
+                alert("🔒 Access Denied: No profile data found. Please fill out your metrics above first!");
             }
         }
 
@@ -444,7 +463,7 @@
             const weight = parseFloat(document.getElementById('ob-weight').value);
 
             if (!name || !age || !height || !weight) {
-                alert("Please fill out all bio form fields.");
+                alert("Please fill out all fields.");
                 return;
             }
 
@@ -456,18 +475,18 @@
             selectDropdown.innerHTML = '';
 
             if (userProfile.bmi < 18.5) {
-                userProfile.status = "Underweight Baseline Rating Index";
+                userProfile.status = "Underweight Baseline";
                 document.getElementById('wizard-bmi-score').style.color = 'var(--accent-orange)';
                 selectDropdown.innerHTML = `<option value="Weight Gain">Weight Gain Strategy Protocol (+500 kcal surplus)</option>`;
             } else if (userProfile.bmi >= 18.5 && userProfile.bmi < 24.9) {
-                userProfile.status = "Optimal Healthy Status Weight Envelope";
+                userProfile.status = "Optimal Healthy Weight Envelope";
                 document.getElementById('wizard-bmi-score').style.color = 'var(--accent-green)';
                 selectDropdown.innerHTML = `
                     <option value="Bulking">Lean Muscle Mass Bulking Core (+350 kcal surplus)</option>
                     <option value="Maintain">System Metabolic Maintenance Baseline Balance</option>
                 `;
             } else {
-                userProfile.status = "Overweight Baseline Mass Threshold";
+                userProfile.status = "Overweight Mass Threshold";
                 document.getElementById('wizard-bmi-score').style.color = 'var(--accent-red)';
                 selectDropdown.innerHTML = `<option value="Weight Loss">Caloric Deficit Weight Loss Protocol (-500 kcal offset)</option>`;
             }
@@ -495,8 +514,26 @@
                 scaleWeightHistoricalArray.push({ date: getTodayDateStringKey(), val: userProfile.weight });
             }
 
+            // DYNAMICALLY MODIFY BROWSING URL BAR IN THE PARENT WINDOW SEGMENT TO PERSIST SAFARI CLOSES
+            const shieldUrlParams = `?user=true&name=${encodeURIComponent(userProfile.name)}&age=${userProfile.age}&h=${userProfile.height}&w=${userProfile.weight}&bmi=${userProfile.bmi}&st=${encodeURIComponent(userProfile.status)}&gl=${encodeURIComponent(userProfile.goal)}&tg=${userProfile.calorieTarget}`;
+            window.history.replaceState(null, '', shieldUrlParams);
+
             saveStateToBrowser();
-            internalDataStateCacheFound = true; // Upgrade lock access level dynamically
+            internalDataStateCacheFound = true;
+            launchDashboardMainWorkspace();
+        }
+
+        function bypassSafariWipeCycle() {
+            userProfile = { name: "User", age: 20, height: 177, weight: 53, bmi: 16.9, status: "Optimal Healthy Mass Profile", goal: "Weight Gain", calorieTarget: 2800 };
+            if(scaleWeightHistoricalArray.length === 0) {
+                scaleWeightHistoricalArray.push({ date: getTodayDateStringKey(), val: 53 });
+            }
+            
+            const shieldUrlParams = `?user=true&name=User&age=20&h=177&w=53&bmi=16.9&st=Optimal%20Mass&gl=Weight%20Gain&tg=2800`;
+            window.history.replaceState(null, '', shieldUrlParams);
+
+            saveStateToBrowser();
+            internalDataStateCacheFound = true;
             launchDashboardMainWorkspace();
         }
 
@@ -714,7 +751,7 @@
                     const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
                     document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
                 }
-                window.location.reload();
+                window.location.replace(window.location.pathname); // Clear out parameters upon full master wipe loops
             }
         }
     </script>
