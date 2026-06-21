@@ -19,12 +19,12 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         body { background-color: var(--bg-color); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
 
-        /* FULL SCREEN OVERLAY ONBOARDING WIZARD - FORCED FLEX BY DEFAULT */
+        /* FULL SCREEN OVERLAY ONBOARDING WIZARD */
         #onboarding-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
             background-color: var(--bg-color);
-            display: flex; 
+            display: none; 
             justify-content: center;
             align-items: center;
             z-index: 10000;
@@ -52,7 +52,6 @@
         button { background-color: var(--accent); border: none; font-weight: bold; cursor: pointer; transition: 0.2s; margin-top: 10px; }
         button:hover { opacity: 0.9; transform: translateY(-1px); }
         
-        /* CLEAN UNIVERSAL WELCOME BUTTON STYLE */
         .massive-bypass-btn {
             background: linear-gradient(135deg, #0f172a, #1e293b);
             border: 2px solid var(--accent-green);
@@ -69,17 +68,12 @@
             gap: 8px;
             cursor: pointer;
         }
-        .massive-bypass-btn:hover {
-            background: linear-gradient(135deg, #1e293b, #334155);
-            border-color: var(--accent);
-            color: #ffffff;
-        }
 
         .bmi-badge { background: #0f172a; padding: 15px; border-radius: 8px; border: 1px solid #334155; margin-bottom: 15px; text-align: center; }
         .bmi-number { font-size: 1.8rem; font-weight: bold; color: var(--accent-green); margin-bottom: 4px; }
         .bmi-status-text { font-size: 0.9rem; font-weight: bold; }
         
-        /* MAIN APPLICATION WORKSPACE - HIDDEN BY DEFAULT */
+        /* MAIN APPLICATION WORKSPACE */
         #app-content { display: none; padding: 20px; max-width: 1600px; width: 100%; margin: 0 auto; }
         header { text-align: center; padding: 15px 0; border-bottom: 1px solid #334155; margin-bottom: 25px; }
         header h1 { font-size: 1.8rem; color: var(--text-main); }
@@ -169,7 +163,6 @@
                     <input type="number" id="ob-weight" placeholder="e.g., 68">
                 </div>
                 <button onclick="processOnboardingStepOne()">Evaluate Metrics & Next</button>
-
                 <button onclick="bypassSafariWipeCycle()" class="massive-bypass-btn">👋 Welcome Back! Enter Dashboard</button>
 
                 <div style="margin-top: 20px; border-top: 1px dashed #475569; padding-top: 15px; text-align: center;">
@@ -191,7 +184,7 @@
                 <div class="form-field" id="goal-selection-container">
                     <label>Target Workspace Strategic Path Goal</label>
                     <select id="ob-goal">
-                        </select>
+                    </select>
                 </div>
                 
                 <button onclick="finalizeProfileSetup()">Complete Setup & Open Dashboard</button>
@@ -329,8 +322,10 @@
     </div>
 
     <script>
-        // CORE FRAMEWORK MASTER CONFIGS
-        let userProfile = { name: "User", age: 20, height: 177, weight: 53, bmi: 16.9, status: "Underweight Baseline Rating Index", goal: "Weight Gain", calorieTarget: 2800 };
+        // SAFARI PERMANENT CORE RECOVERY OVERWRITE MATRIX
+        const safariDefaultProfile = { name: "User", age: 20, height: 177, weight: 53, bmi: 16.9, status: "Underweight Baseline Rating Index", goal: "Weight Gain", calorieTarget: 2800 };
+        
+        let userProfile = { name: "", age: 0, height: 0, weight: 0, bmi: 0, status: "", goal: "", calorieTarget: 2000 };
         let totalDailyCaloriesLogged = 0;
         let scaleWeightHistoricalArray = [];
 
@@ -340,9 +335,49 @@
             document.cookie = `${key}=${encodeURIComponent(value)};expires=${expireDate.toUTCString()};path=/;SameSite=Lax`;
         }
 
-        function getCookieFallback(key) {
-            const match = document.cookie.match(new RegExp('(^| )' + key + '=([^;]+)'));
-            return match ? decodeURIComponent(match[2]) : null;
+        document.addEventListener("DOMContentLoaded", function() {
+            evaluateLocalPlatformMemoryOnStartup();
+        });
+
+        function evaluateLocalPlatformMemoryOnStartup() {
+            let match = document.cookie.match(new RegExp('(^| )cookie_userProfile=([^;]+)'));
+            let cachedProfileString = localStorage.getItem('publicPlatformUserProfileData') || (match ? decodeURIComponent(match[2]) : null);
+
+            // SAFARI STRUCTURAL BYPASS: If tab closure totally cleared out storage, inject hardwired parameters as active backup targets
+            if (!cachedProfileString) {
+                userProfile = {...safariDefaultProfile};
+            } else {
+                userProfile = JSON.parse(cachedProfileString);
+            }
+
+            let matchHist = document.cookie.match(new RegExp('(^| )cookie_weightArray=([^;]+)'));
+            let cachedHistoryString = localStorage.getItem('publicPlatformWeightArrayData') || (matchHist ? decodeURIComponent(matchHist[2]) : null);
+            if (cachedHistoryString) scaleWeightHistoricalArray = JSON.parse(cachedHistoryString);
+            
+            let matchDate = document.cookie.match(new RegExp('(^| )cookie_dateKey=([^;]+)'));
+            let lastDateSavedString = localStorage.getItem('publicPlatformLastDateKey') || (matchDate ? decodeURIComponent(matchDate[2]) : null);
+            const todayKeyString = getTodayDateStringKey();
+            
+            if (lastDateSavedString && lastDateSavedString !== todayKeyString) {
+                totalDailyCaloriesLogged = 0;
+                document.getElementById('timeline-logger-list').innerHTML = '';
+                saveStateToBrowser();
+            } else {
+                let matchCal = document.cookie.match(new RegExp('(^| )cookie_calCount=([^;]+)'));
+                let calCountStr = localStorage.getItem('publicPlatformTotalDailyCaloriesCount') || (matchCal ? decodeURIComponent(matchCal[2]) : null);
+                totalDailyCaloriesLogged = parseInt(calCountStr) || 0;
+
+                let matchList = document.cookie.match(new RegExp('(^| )cookie_timelineHtml=([^;]+)'));
+                let timelineHtml = localStorage.getItem('publicPlatformDayEntriesListHTML') || (matchList ? decodeURIComponent(matchList[2]) : null);
+                document.getElementById('timeline-logger-list').innerHTML = timelineHtml || '';
+            }
+
+            if(scaleWeightHistoricalArray.length === 0) {
+                scaleWeightHistoricalArray.push({ date: getTodayDateStringKey(), val: userProfile.weight });
+            }
+
+            // Lock onto dashboard instantly, bypassing form resetting completely
+            launchDashboardMainWorkspace();
         }
 
         function saveStateToBrowser() {
@@ -366,64 +401,8 @@
             setCookieFallback('cookie_dateKey', dateKeyStr);
         }
 
-        document.addEventListener("DOMContentLoaded", function() {
-            evaluateLocalPlatformMemoryOnStartup();
-        });
-
-        function evaluateLocalPlatformMemoryOnStartup() {
-            let cachedProfileString = null;
-            try { cachedProfileString = localStorage.getItem('publicPlatformUserProfileData'); } catch (e) {}
-            if (!cachedProfileString) { cachedProfileString = getCookieFallback('cookie_userProfile'); }
-
-            if (cachedProfileString) {
-                // TRUE REGISTERED PROFILE FOUND -> Open dashboard directly
-                userProfile = JSON.parse(cachedProfileString);
-                
-                let cachedHistoryString = null;
-                try { cachedHistoryString = localStorage.getItem('publicPlatformWeightArrayData'); } catch(e){}
-                if (!cachedHistoryString) { cachedHistoryString = getCookieFallback('cookie_weightArray'); }
-                if (cachedHistoryString) scaleWeightHistoricalArray = JSON.parse(cachedHistoryString);
-                
-                let lastDateSavedString = null;
-                try { lastDateSavedString = localStorage.getItem('publicPlatformLastDateKey'); } catch(e){}
-                if (!lastDateSavedString) { lastDateSavedString = getCookieFallback('cookie_dateKey'); }
-                
-                const todayKeyString = getTodayDateStringKey();
-                
-                if (lastDateSavedString && lastDateSavedString !== todayKeyString) {
-                    totalDailyCaloriesLogged = 0;
-                    document.getElementById('timeline-logger-list').innerHTML = '';
-                    saveStateToBrowser();
-                } else {
-                    let calCountStr = null;
-                    try { calCountStr = localStorage.getItem('publicPlatformTotalDailyCaloriesCount'); } catch(e){}
-                    if (!calCountStr) { calCountStr = getCookieFallback('cookie_calCount'); }
-                    totalDailyCaloriesLogged = parseInt(calCountStr) || 0;
-
-                    let timelineHtml = null;
-                    try { timelineHtml = localStorage.getItem('publicPlatformDayEntriesListHTML'); } catch(e){}
-                    if (!timelineHtml) { timelineHtml = getCookieFallback('cookie_timelineHtml'); }
-                    document.getElementById('timeline-logger-list').innerHTML = timelineHtml || '';
-                }
-
-                if(scaleWeightHistoricalArray.length === 0) {
-                    scaleWeightHistoricalArray.push({ date: getTodayDateStringKey(), val: userProfile.weight });
-                }
-
-                launchDashboardMainWorkspace();
-            } else {
-                // CACHE IS CLEAN -> Halt execution cleanly and strictly show the full overlay wizard card!
-                document.getElementById('onboarding-overlay').style.display = 'flex';
-                document.getElementById('app-content').style.display = 'none';
-            }
-        }
-
-        // ONE-CLICK INSTANT SKIP SHORTCUT: Hardwires your exact dedicated profile on tap!
         function bypassSafariWipeCycle() {
-            userProfile = { name: "User", age: 20, height: 177, weight: 53, bmi: 16.9, status: "Underweight Baseline Rating Index", goal: "Weight Gain", calorieTarget: 2800 };
-            if(scaleWeightHistoricalArray.length === 0) {
-                scaleWeightHistoricalArray.push({ date: getTodayDateStringKey(), val: 53 });
-            }
+            userProfile = {...safariDefaultProfile};
             saveStateToBrowser();
             launchDashboardMainWorkspace();
         }
@@ -521,42 +500,21 @@
             alertElementBox.style.display = 'block'; 
             alertElementBox.className = 'warning-alert-box'; 
 
-            if (userProfile.goal === "Weight Loss") {
-                if (totalDailyCaloriesLogged > userProfile.calorieTarget) {
-                    alertElementBox.innerHTML = `⚠️ <strong>Deficit Boundary Breach!</strong> You have exceeded your strategic weight loss limit by <strong>+${totalDailyCaloriesLogged - userProfile.calorieTarget} kcal</strong>.`;
-                    alertElementBox.style.background = 'rgba(239, 68, 68, 0.2)';
-                    alertElementBox.style.color = '#fca5a5';
-                    alertElementBox.style.borderColor = 'var(--accent-red)';
-                } else {
-                    alertElementBox.innerHTML = `✅ Staying on track! You have <strong>${userProfile.calorieTarget - totalDailyCaloriesLogged} kcal</strong> remaining for your deficit budget.`;
-                    alertElementBox.style.background = 'rgba(16, 185, 129, 0.15)';
-                    alertElementBox.style.color = '#a7f3d0';
-                    alertElementBox.style.borderColor = 'var(--accent-green)';
-                }
+            if (totalDailyCaloriesLogged < userProfile.calorieTarget) {
+                const remainingUnderDeficitMargin = userProfile.calorieTarget - totalDailyCaloriesLogged;
+                alertElementBox.innerHTML = `📢 <strong>Calories are too low!</strong> You have logged ${totalDailyCaloriesLogged} kcal out of your ${userProfile.calorieTarget} kcal target. <strong>You need to eat more calories!</strong> (${remainingUnderDeficitMargin} kcal remaining to meet your goal)`;
+                alertElementBox.style.background = 'rgba(245, 158, 11, 0.2)';
+                alertElementBox.style.color = '#fde047';
+                alertElementBox.style.borderColor = 'var(--accent-orange)';
             } else {
-                if (totalDailyCaloriesLogged < userProfile.calorieTarget) {
-                    const remainingUnderDeficitMargin = userProfile.calorieTarget - totalDailyCaloriesLogged;
-                    alertElementBox.innerHTML = `📢 <strong>Calories are too low!</strong> You have logged ${totalDailyCaloriesLogged} kcal out of your ${userProfile.calorieTarget} kcal target. <strong>You need to eat more calories!</strong> (${remainingUnderDeficitMargin} kcal remaining to meet your goal)`;
-                    alertElementBox.style.background = 'rgba(245, 158, 11, 0.2)';
-                    alertElementBox.style.color = '#fde047';
-                    alertElementBox.style.borderColor = 'var(--accent-orange)';
-                } else {
-                    alertElementBox.innerHTML = `🎉 Caloric Surplus Satisfied! Total logged: <strong>${totalDailyCaloriesLogged} kcal</strong>. Target fuel profile met effectively today!`;
-                    alertElementBox.style.background = 'rgba(16, 185, 129, 0.15)';
-                    alertElementBox.style.color = '#a7f3d0';
-                    alertElementBox.style.borderColor = 'var(--accent-green)';
-                }
+                alertElementBox.innerHTML = `🎉 Caloric Surplus Satisfied! Total logged: <strong>${totalDailyCaloriesLogged} kcal</strong>. Target fuel profile met effectively today!`;
+                alertElementBox.style.background = 'rgba(16, 185, 129, 0.15)';
+                alertElementBox.style.color = '#a7f3d0';
+                alertElementBox.style.borderColor = 'var(--accent-green)';
             }
 
             renderHistoricalWeightLogsList();
             renderMonthlyProgressCalculationSummaryReports();
-        }
-
-        function copyGeminiPrompt(mealTypeSegment) {
-            const promptInstructionPayloadString = `I am using a free fitness tracker application setup file. I am eating a meal item portion for ${mealTypeSegment}. Please analyze my selection item content parameters description and estimate its approximate raw energy values layout metric. Reply back to me strictly using this template output format so I can type it into my manual log window text box right away: [Food Item Description] | [Estimated Integer Numbers Only] kcal`;
-            navigator.clipboard.writeText(promptInstructionPayloadString).then(() => {
-                alert("📋 Smart Gemini Query Prompt template injected into clipboard successfully!");
-            });
         }
 
         function logSegmentedMeal(mealTypeKeyName) {
@@ -706,6 +664,12 @@
                 }
                 window.location.reload();
             }
+        }
+        function copyGeminiPrompt(mealTypeSegment) {
+            const promptInstructionPayloadString = `I am using a free fitness tracker application setup file. I am eating a meal item portion for ${mealTypeSegment}. Please analyze my selection item content parameters description and estimate its approximate raw energy values layout metric. Reply back to me strictly using this template output format so I can type it into my manual log window text box right away: [Food Item Description] | [Estimated Integer Numbers Only] kcal`;
+            navigator.clipboard.writeText(promptInstructionPayloadString).then(() => {
+                alert("📋 Smart Gemini Query Prompt template injected into clipboard successfully!");
+            });
         }
     </script>
 </body>
