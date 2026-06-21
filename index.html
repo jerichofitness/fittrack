@@ -19,12 +19,12 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         body { background-color: var(--bg-color); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
         
-        /* FULL SCREEN OVERLAY ONBOARDING WIZARD */
+        /* FULL SCREEN OVERLAY ONBOARDING WIZARD - HIDDEN BY DEFAULT TO PREVENT REFRESH FLICKER BUGS */
         #onboarding-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
             background-color: var(--bg-color);
-            display: flex;
+            display: none; /* Changed from flex to none */
             justify-content: center;
             align-items: center;
             z-index: 10000;
@@ -314,32 +314,39 @@
         });
 
         function evaluateLocalPlatformMemoryOnStartup() {
-            const cachedProfileString = localStorage.getItem('publicPlatformUserProfileData');
+            let cachedProfileString = null;
+            try {
+                cachedProfileString = localStorage.getItem('publicPlatformUserProfileData');
+            } catch (e) {
+                console.error("Local storage access blocked by browser options.");
+            }
+
             if (cachedProfileString) {
                 userProfile = JSON.parse(cachedProfileString);
                 
-                // Fetch historical array
-                const cachedHistoryString = localStorage.getItem('publicPlatformWeightArrayData');
-                if (cachedHistoryString) scaleWeightHistoricalArray = JSON.parse(cachedHistoryString);
-                
-                // Fetch daily calories
-                const lastDateSavedString = localStorage.getItem('publicPlatformLastDateKey');
-                const todayKeyString = getTodayDateStringKey();
-                
-                if (lastDateSavedString && lastDateSavedString !== todayKeyString) {
-                    // Archive previous entries into general storage and clear out daily balance limits
-                    localStorage.setItem('publicPlatformDayEntriesListHTML', '');
-                    totalDailyCaloriesLogged = 0;
-                    localStorage.setItem('publicPlatformTotalDailyCaloriesCount', 0);
-                    localStorage.setItem('publicPlatformLastDateKey', todayKeyString);
-                } else {
-                    totalDailyCaloriesLogged = parseInt(localStorage.getItem('publicPlatformTotalDailyCaloriesCount')) || 0;
-                    document.getElementById('timeline-logger-list').innerHTML = localStorage.getItem('publicPlatformDayEntriesListHTML') || '';
+                try {
+                    const cachedHistoryString = localStorage.getItem('publicPlatformWeightArrayData');
+                    if (cachedHistoryString) scaleWeightHistoricalArray = JSON.parse(cachedHistoryString);
+                    
+                    const lastDateSavedString = localStorage.getItem('publicPlatformLastDateKey');
+                    const todayKeyString = getTodayDateStringKey();
+                    
+                    if (lastDateSavedString && lastDateSavedString !== todayKeyString) {
+                        localStorage.setItem('publicPlatformDayEntriesListHTML', '');
+                        totalDailyCaloriesLogged = 0;
+                        localStorage.setItem('publicPlatformTotalDailyCaloriesCount', 0);
+                        localStorage.setItem('publicPlatformLastDateKey', todayKeyString);
+                    } else {
+                        totalDailyCaloriesLogged = parseInt(localStorage.getItem('publicPlatformTotalDailyCaloriesCount')) || 0;
+                        document.getElementById('timeline-logger-list').innerHTML = localStorage.getItem('publicPlatformDayEntriesListHTML') || '';
+                    }
+                } catch(err) {
+                    console.log("Error parsing historical cache items.");
                 }
 
                 launchDashboardMainWorkspace();
             } else {
-                // Keep wizard focus locked up tight
+                // Force configuration wizards on securely if no metadata keys are verified
                 document.getElementById('onboarding-overlay').style.display = 'flex';
                 document.getElementById('app-content').style.display = 'none';
             }
@@ -356,17 +363,13 @@
                 return;
             }
 
-            // Calculation processing index logic parameters
             userProfile.name = name; userProfile.age = age; userProfile.height = height; userProfile.weight = weight;
-            
-            // Calculate BMI: kg / (m^2)
             const heightInMeters = height / 100;
             userProfile.bmi = (weight / (heightInMeters * heightInMeters)).toFixed(1);
 
             const selectDropdown = document.getElementById('ob-goal');
             selectDropdown.innerHTML = '';
 
-            // Smart assessment logic categorizations
             if (userProfile.bmi < 18.5) {
                 userProfile.status = "Underweight Baseline Rating Index";
                 document.getElementById('wizard-bmi-score').style.color = 'var(--accent-orange)';
@@ -387,7 +390,6 @@
             document.getElementById('wizard-bmi-score').innerText = userProfile.bmi;
             document.getElementById('wizard-bmi-status').innerText = userProfile.status;
 
-            // Shift visual frame indexes
             document.getElementById('step-1').classList.remove('active');
             document.getElementById('step-2').classList.add('active');
         }
@@ -396,7 +398,6 @@
             const targetGoalValueString = document.getElementById('ob-goal').value;
             userProfile.goal = targetGoalValueString;
 
-            // Baseline calculations targets configuration values mapping
             let basalMetabolicRateAllowance = 2000;
             if (userProfile.goal === "Weight Loss") basalMetabolicRateAllowance = 1750;
             else if (userProfile.goal === "Bulking") basalMetabolicRateAllowance = 2650;
@@ -405,30 +406,27 @@
 
             userProfile.calorieTarget = basalMetabolicRateAllowance;
 
-            // Commit record to local browser application engine state memory registers
-            localStorage.setItem('publicPlatformUserProfileData', JSON.stringify(userProfile));
-            localStorage.setItem('publicPlatformLastDateKey', getTodayDateStringKey());
-            
-            // Push scale structural records baseline array
-            if(scaleWeightHistoricalArray.length === 0) {
-                const initialPointObject = { date: getTodayDateStringKey(), val: userProfile.weight };
-                scaleWeightHistoricalArray.push(initialPointObject);
-                localStorage.setItem('publicPlatformWeightArrayData', JSON.stringify(scaleWeightHistoricalArray));
+            try {
+                localStorage.setItem('publicPlatformUserProfileData', JSON.stringify(userProfile));
+                localStorage.setItem('publicPlatformLastDateKey', getTodayDateStringKey());
+                
+                if(scaleWeightHistoricalArray.length === 0) {
+                    const initialPointObject = { date: getTodayDateStringKey(), val: userProfile.weight };
+                    scaleWeightHistoricalArray.push(initialPointObject);
+                    localStorage.setItem('publicPlatformWeightArrayData', JSON.stringify(scaleWeightHistoricalArray));
+                }
+            } catch (e) {
+                alert("⚠️ Local storage writing failed! Your browser settings might be wiping site history data. Consider exporting an external backup file to keep entries safe.");
             }
 
-            // Dismantle overlays and boot system array modules
-            document.getElementById('onboarding-overlay').style.opacity = '0';
-            setTimeout(() => {
-                document.getElementById('onboarding-overlay').style.display = 'none';
-                evaluateLocalPlatformMemoryOnStartup();
-            }, 450);
+            document.getElementById('onboarding-overlay').style.display = 'none';
+            launchDashboardMainWorkspace();
         }
 
         function launchDashboardMainWorkspace() {
+            document.getElementById('onboarding-overlay').style.display = 'none';
             document.getElementById('app-content').style.display = 'block';
-            setTimeout(() => { document.getElementById('app-content').style.opacity = '1'; }, 50);
 
-            // Populate text parameters frameworks targets natively
             document.getElementById('main-user-title').innerHTML = `<span>${userProfile.name}'s</span> FitTrack Dashboard`;
             document.getElementById('main-user-subtitle').innerText = `Configured Profile Target Mode: Dedicated ${userProfile.goal} Matrix`;
             
@@ -439,11 +437,9 @@
         }
 
         function updateVisualDashboardArrayOutputs() {
-            // Scale weights summary values computation updates
             const currentWeightDisplay = scaleWeightHistoricalArray.length > 0 ? scaleWeightHistoricalArray[scaleWeightHistoricalArray.length - 1].val : userProfile.weight;
             document.getElementById('banner-current-weight').innerText = `${currentWeightDisplay} kg`;
 
-            // Core energy indicator calculations balance bar rendering logics
             document.getElementById('cal-summary').innerText = totalDailyCaloriesLogged;
             document.getElementById('target-summary-val').innerText = userProfile.calorieTarget;
             
@@ -454,7 +450,6 @@
             document.getElementById('bar-percentage-display').innerText = `${Math.round(currentPercentageValueDecimal)}%`;
             barElementReference.style.width = `${currentPercentageValueDecimal > 100 ? 100 : currentPercentageValueDecimal}%`;
 
-            // AUTOMATED TARGET THRESHOLD NOTIFIERS LOGIC ENGINES
             const alertElementBox = document.getElementById('dashboard-warning-alert');
             alertElementBox.style.display = 'block'; 
             alertElementBox.className = 'warning-alert-box'; 
@@ -472,7 +467,6 @@
                     alertElementBox.style.borderColor = 'var(--accent-green)';
                 }
             } else {
-                // BULKING OR WEIGHT GAIN
                 if (totalDailyCaloriesLogged < userProfile.calorieTarget) {
                     const remainingUnderDeficitMargin = userProfile.calorieTarget - totalDailyCaloriesLogged;
                     alertElementBox.innerHTML = `📢 <strong>Calories are too low!</strong> You have only logged ${totalDailyCaloriesLogged} kcal out of your ${userProfile.calorieTarget} kcal target. <strong>You need to eat more calories!</strong> (${remainingUnderDeficitMargin} kcal remaining to meet your goal)`;
@@ -487,18 +481,14 @@
                 }
             }
 
-            // Sync weight histories timeline display arrays text list outputs frame engines
             renderHistoricalWeightLogsList();
             renderMonthlyProgressCalculationSummaryReports();
         }
 
         function copyGeminiPrompt(mealTypeSegment) {
             const promptInstructionPayloadString = `I am using a free fitness tracker application setup file. I am eating a meal item portion for ${mealTypeSegment}. Please analyze my selection item content parameters description and estimate its approximate raw energy values layout metric. Reply back to me strictly using this template output format so I can type it into my manual log window text box right away: [Food Item Description] | [Estimated Integer Numbers Only] kcal`;
-            
             navigator.clipboard.writeText(promptInstructionPayloadString).then(() => {
                 alert(`📋 Smart Gemini Query Prompt template injected into clipboard successfully!\n\nPaste it directly inside the Gemini interface input window text area bar in your new tab to evaluate your ${mealTypeSegment} variables immediately for free!`);
-            }).catch(() => {
-                console.log("Clipboard framework block context parameters notice alert.");
             });
         }
 
@@ -520,15 +510,14 @@
             createdListItemNode.innerHTML = `<span><strong>[${mealTypeKeyName}]</strong> ${foodTextDescriptionValue}</span><strong style="color:var(--accent-orange);">+${calorieInputValueInteger} kcal</strong>`;
             activeLoggerTimelineContainer.insertBefore(createdListItemNode, activeLoggerTimelineContainer.firstChild);
 
-            // Accumulate calculations balances tracking values state counters frameworks
             totalDailyCaloriesLogged += calorieInputValueInteger;
-            localStorage.setItem('publicPlatformTotalDailyCaloriesCount', totalDailyCaloriesLogged);
-            localStorage.setItem('publicPlatformDayEntriesListHTML', activeLoggerTimelineContainer.innerHTML);
+            try {
+                localStorage.setItem('publicPlatformTotalDailyCaloriesCount', totalDailyCaloriesLogged);
+                localStorage.setItem('publicPlatformDayEntriesListHTML', activeLoggerTimelineContainer.innerHTML);
+            } catch(e){}
 
-            // Clean inputs
             descriptionInputSelector.value = '';
             energyValueInputSelector.value = '';
-
             updateVisualDashboardArrayOutputs();
         }
 
@@ -542,26 +531,24 @@
             }
 
             const targetDateStringStampKey = getTodayDateStringKey();
-            
-            // Boundary validation: override if value recorded on same calendar stamp date parameters framework context
             const matchingIndexSearchKeyPosition = scaleWeightHistoricalArray.findIndex(item => item.date === targetDateStringStampKey);
+            
             if (matchingIndexSearchKeyPosition !== -1) {
                 scaleWeightHistoricalArray[matchingIndexSearchKeyPosition].val = processedWeightInputValueDecimal;
             } else {
                 scaleWeightHistoricalArray.push({ date: targetDateStringStampKey, val: processedWeightInputValueDecimal });
             }
 
-            localStorage.setItem('publicPlatformWeightArrayData', JSON.stringify(scaleWeightHistoricalArray));
+            try {
+                localStorage.setItem('publicPlatformWeightArrayData', JSON.stringify(scaleWeightHistoricalArray));
+            }catch(e){}
             inputWeightScaleFieldSelector.value = '';
-
             updateVisualDashboardArrayOutputs();
         }
 
         function renderHistoricalWeightLogsList() {
             const weightTimelineListWrapperElement = document.getElementById('weight-history-list');
             weightTimelineListWrapperElement.innerHTML = '';
-
-            // Render array in reverse tracking sequence order timelines
             for (let indexPosition = scaleWeightHistoricalArray.length - 1; indexPosition >= 0; indexPosition--) {
                 const recordItemObject = scaleWeightHistoricalArray[indexPosition];
                 const listNodeItemElement = document.createElement('li');
@@ -572,7 +559,6 @@
 
         function renderMonthlyProgressCalculationSummaryReports() {
             const reportingOutputDisplayDivBox = document.getElementById('monthly-summary-display-box');
-            
             if (scaleWeightHistoricalArray.length < 2) {
                 reportingOutputDisplayDivBox.innerHTML = `📊 <strong>Evaluation Index Pending:</strong> Additional data point intervals are required. Please record at least two distinct weekly weight scale metrics inputs to evaluate monthly progress calculations.`;
                 return;
@@ -580,7 +566,6 @@
 
             const initialBaselineRecordPoint = scaleWeightHistoricalArray[0];
             const latestCurrentRecordPoint = scaleWeightHistoricalArray[scaleWeightHistoricalArray.length - 1];
-            
             const netMassVarianceDeltaDifference = (latestCurrentRecordPoint.val - initialBaselineRecordPoint.val).toFixed(1);
             let evaluationSummaryDiagnosticMessageText = "";
 
@@ -599,7 +584,6 @@
             `;
         }
 
-        // PUBLIC PUBLIC EXPORT PROFILE FILE SYSTEM FUNCTIONS
         function exportDataBackupFile() {
             const backupPackageObject = {
                 profile: localStorage.getItem('publicPlatformUserProfileData'),
@@ -628,7 +612,6 @@
             fileReadingEngine.onload = function(e) {
                 try {
                     const parsedPackage = JSON.parse(e.target.result);
-                    
                     if (parsedPackage.profile) {
                         localStorage.setItem('publicPlatformUserProfileData', parsedPackage.profile);
                         if(parsedPackage.weightHistory) localStorage.setItem('publicPlatformWeightArrayData', parsedPackage.weightHistory);
@@ -636,14 +619,10 @@
                         if(parsedPackage.entriesList) localStorage.setItem('publicPlatformDayEntriesListHTML', parsedPackage.entriesList);
                         if(parsedPackage.dateKey) localStorage.setItem('publicPlatformLastDateKey', parsedPackage.dateKey);
 
-                        alert("🎉 Fitness data backup file fully restored successfully! Opening your tracking matrix dashboard...");
+                        alert("🎉 Fitness data backup file fully restored successfully!");
                         window.location.reload();
-                    } else {
-                        alert("⚠️ Invalid backup file format target detected.");
                     }
-                } catch (err) {
-                    alert("❌ Failed to parse data package structure.");
-                }
+                } catch (err) { alert("❌ Failed to parse data package structure."); }
             };
             fileReadingEngine.readAsText(uploadedFileRef);
         }
@@ -653,9 +632,8 @@
         }
 
         function wipeAllLocalPlatformCache() {
-            if (confirm("Are you absolutely sure you want to clear out all localized account parameters tracking arrays history datasets from this device storage node configuration framework?")) {
+            if (confirm("Are you absolutely sure you want to clear out all localized account parameters tracking arrays history datasets?")) {
                 localStorage.clear();
-                alert("Account node context memory caches cleared successfully. Reloading base environment runtime context layouts.");
                 window.location.reload();
             }
         }
