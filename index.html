@@ -85,9 +85,6 @@
             background: rgba(239, 68, 68, 0.15); border: 1px solid var(--accent-red); color: #fca5a5;
             padding: 12px; border-radius: 8px; font-size: 0.85rem; font-weight: bold; display: none; line-height: 1.4;
         }
-        .warning-alert-box.suggestion {
-            background: rgba(245, 158, 11, 0.15); border: 1px solid var(--accent-orange); color: #fde047;
-        }
 
         /* DASHBOARD LAYOUT GRID */
         .dashboard-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
@@ -193,14 +190,17 @@
         </div>
 
         <div class="budget-card">
-            <div class="budget-flex">
-                <div>Energy Counter Metrics</div>
-                <div id="bar-percentage-display">0%</div>
+            <div class="budget-flex" style="font-size: 1.3rem; margin-bottom: 15px; border-bottom: 1px dashed #334155; padding-bottom: 10px;">
+                <div>Total Logged: <span id="cal-summary" style="color: var(--accent-orange); font-weight: bold;">0</span> kcal</div>
+                <div style="color: var(--text-muted);">Daily Target: <span id="target-summary-val" style="font-weight: bold;">0</span> kcal</div>
+                <div id="bar-percentage-display" style="color: var(--accent-green); font-weight: bold;">0%</div>
             </div>
             <div class="calorie-progress-wrapper">
                 <div id="progress-bar" class="progress-bar"></div>
             </div>
-            <div id="dashboard-warning-alert" class="warning-alert-box">⚠️ Threshold Breach Alert Triggered!</div>
+            <div id="dashboard-warning-alert" class="warning-alert-box" style="display: block; font-size: 1.05rem; padding: 15px; text-align: center;">
+                Processing system status data...
+            </div>
         </div>
 
         <div class="dashboard-grid">
@@ -386,7 +386,6 @@
             userProfile.goal = targetGoalValueString;
 
             // Baseline calculations targets configuration values mapping
-            // Harris-Benedict proxy mapping variables setup
             let basalMetabolicRateAllowance = 2000;
             if (userProfile.goal === "Weight Loss") basalMetabolicRateAllowance = 1750;
             else if (userProfile.goal === "Bulking") basalMetabolicRateAllowance = 2650;
@@ -434,7 +433,8 @@
             document.getElementById('banner-current-weight').innerText = `${currentWeightDisplay} kg`;
 
             // Core energy indicator calculations balance bar rendering logics
-            document.getElementById('cal-summary').innerText = `${totalDailyCaloriesLogged} / ${userProfile.calorieTarget} kcal total tracked today`;
+            document.getElementById('cal-summary').innerText = totalDailyCaloriesLogged;
+            document.getElementById('target-summary-val').innerText = userProfile.calorieTarget;
             
             let currentPercentageValueDecimal = (totalDailyCaloriesLogged / userProfile.calorieTarget) * 100;
             if(currentPercentageValueDecimal < 0) currentPercentageValueDecimal = 0;
@@ -445,28 +445,34 @@
 
             // AUTOMATED TARGET THRESHOLD NOTIFIERS LOGIC ENGINES
             const alertElementBox = document.getElementById('dashboard-warning-alert');
-            alertElementBox.style.display = 'none'; 
-            alertElementBox.className = 'warning-alert-box'; // reset class lists state layout flags
+            alertElementBox.style.display = 'block'; 
+            alertElementBox.className = 'warning-alert-box'; 
 
             if (userProfile.goal === "Weight Loss") {
                 if (totalDailyCaloriesLogged > userProfile.calorieTarget) {
-                    alertElementBox.innerText = `⚠️ Deficit Boundary Breach Warning! Total logged value has exceeded your strategic Weight Loss spending target by +${totalDailyCaloriesLogged - userProfile.calorieTarget} kcal. Keep control of additional portions today!`;
-                    alertElementBox.style.display = 'block';
+                    alertElementBox.innerHTML = `⚠️ <strong>Deficit Boundary Breach!</strong> You have exceeded your strategic weight loss limit by <strong>+${totalDailyCaloriesLogged - userProfile.calorieTarget} kcal</strong>. Stop eating additional meals for today!`;
+                    alertElementBox.style.background = 'rgba(239, 68, 68, 0.2)';
+                    alertElementBox.style.color = '#fca5a5';
+                    alertElementBox.style.borderColor = 'var(--accent-red)';
+                } else {
+                    alertElementBox.innerHTML = `../../✅ Staying on track! You have <strong>${userProfile.calorieTarget - totalDailyCaloriesLogged} kcal</strong> remaining to consume for your weight loss target budget.`;
+                    alertElementBox.style.background = 'rgba(16, 185, 129, 0.15)';
+                    alertElementBox.style.color = '#a7f3d0';
+                    alertElementBox.style.borderColor = 'var(--accent-green)';
                 }
-            } else if (userProfile.goal === "Bulking" || userProfile.goal === "Weight Gain") {
+            } else {
+                // BULKING OR WEIGHT GAIN
                 if (totalDailyCaloriesLogged < userProfile.calorieTarget) {
                     const remainingUnderDeficitMargin = userProfile.calorieTarget - totalDailyCaloriesLogged;
-                    alertElementBox.innerText = `📢 Energy Threshold Deficit Notice: Your cellular systems require an additional +${remainingUnderDeficitMargin} kcal to fulfill your target growth expansion rate parameters. Consider adding another meal log selection!`;
-                    alertElementBox.className = 'warning-alert-box suggestion';
-                    alertElementBox.style.display = 'block';
+                    alertElementBox.innerHTML = `📢 <strong>Calories are too low!</strong> You have only logged ${totalDailyCaloriesLogged} kcal out of your ${userProfile.calorieTarget} kcal target. <strong>You need to eat more calories!</strong> (${remainingUnderDeficitMargin} kcal remaining to meet your goal)`;
+                    alertElementBox.style.background = 'rgba(245, 158, 11, 0.2)';
+                    alertElementBox.style.color = '#fde047';
+                    alertElementBox.style.borderColor = 'var(--accent-orange)';
                 } else {
-                    alertElementBox.innerText = `🎉 Caloric Surpluses Satisfied! Target fuel profiles are fully optimized to support high-efficiency muscular tissue hypertrophy repair pathways today!`;
-                    alertElementBox.className = 'warning-alert-box visual-success';
-                    alertElementBox.style.display = 'block';
-                    // Custom micro success state inline color modifiers overrides parameters manually
+                    alertElementBox.innerHTML = `🎉 Caloric Surplus Satisfied! Total logged: <strong>${totalDailyCaloriesLogged} kcal</strong>. Target fuel profile met to build muscle tissue effectively today!`;
                     alertElementBox.style.background = 'rgba(16, 185, 129, 0.15)';
-                    alertElementBox.style.borderColor = 'var(--accent-green)';
                     alertElementBox.style.color = '#a7f3d0';
+                    alertElementBox.style.borderColor = 'var(--accent-green)';
                 }
             }
 
@@ -476,13 +482,11 @@
         }
 
         function copyGeminiPrompt(mealTypeSegment) {
-            // Strategic pre-constructed payload clipboard injector algorithm matrix string
             const promptInstructionPayloadString = `I am using a free fitness tracker application setup file. I am eating a meal item portion for ${mealTypeSegment}. Please analyze my selection item content parameters description and estimate its approximate raw energy values layout metric. Reply back to me strictly using this template output format so I can type it into my manual log window text box right away: [Food Item Description] | [Estimated Integer Numbers Only] kcal`;
             
             navigator.clipboard.writeText(promptInstructionPayloadString).then(() => {
                 alert(`📋 Smart Gemini Query Prompt template injected into clipboard successfully!\n\nPaste it directly inside the Gemini interface input window text area bar in your new tab to evaluate your ${mealTypeSegment} variables immediately for free!`);
             }).catch(() => {
-                // Secondary recovery fallback text notice logging parameter mechanisms if sandbox variables lock up permissions context logs
                 console.log("Clipboard framework block context parameters notice alert.");
             });
         }
@@ -597,4 +601,4 @@
         }
     </script>
 </body>
-</html
+</html>
