@@ -52,22 +52,25 @@
         button { background-color: var(--accent); border: none; font-weight: bold; cursor: pointer; transition: 0.2s; margin-top: 10px; }
         button:hover { opacity: 0.9; transform: translateY(-1px); }
         
-        /* HUGE BYPASS BUTTON STYLE */
+        /* CLEAN, PREMIUM WELCOME BACK ACTION NODE STYLE */
         .massive-bypass-btn {
-            background: linear-gradient(135deg, #1e293b, #334155);
-            border: 2px dashed var(--accent-orange);
-            color: #fde047;
-            font-size: 1.1rem;
-            padding: 16px;
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            border: 2px solid var(--accent-green);
+            color: #a7f3d0;
+            font-size: 1.05rem;
+            padding: 15px;
             margin-top: 15px;
             border-radius: 10px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.3px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
         .massive-bypass-btn:hover {
-            background: linear-gradient(135deg, #334155, #475569);
-            border-color: #fde047;
+            background: linear-gradient(135deg, #1e293b, #334155);
+            border-color: var(--accent);
             color: #ffffff;
         }
 
@@ -166,7 +169,7 @@
                 </div>
                 <button onclick="processOnboardingStepOne()">Evaluate Metrics & Next</button>
 
-                <button onclick="bypassSafariWipeCycle()" class="massive-bypass-btn">🚀 Force Enter Dashboard (Safari Bypass)</button>
+                <button onclick="bypassSafariWipeCycle()" id="dynamic-bypass-trigger-btn" class="massive-bypass-btn">👋 Welcome Back! Quick Entry</button>
 
                 <div style="margin-top: 20px; border-top: 1px dashed #475569; padding-top: 15px; text-align: center;">
                     <p style="font-size: 0.8rem; margin-bottom: 8px;">Returning User? Restore your tracking data backup file:</p>
@@ -278,7 +281,7 @@
                     <div class="meal-box">
                         <div class="meal-header">
                             <span class="meal-title">🍿 Snacks & Extras</span>
-                            <a href="https://gemini.google.com" target="_blank" class="gemini-link" onclick="copyGeminiPrompt('Snack')">Don't know? Ask Gemini AI ↗</a>
+                            <a href="https://gemini.google.com" target="_blank" class="gemini-link" onclick="copyGeminiPrompt('Snack') text-decoration: none;">Don't know? Ask Gemini AI ↗</a>
                         </div>
                         <div class="meal-inputs">
                             <input type="text" id="food-snack-desc" placeholder="What did you eat?">
@@ -325,7 +328,7 @@
     </div>
 
     <script>
-        // CORE FRAMEWORK PROPERTIES
+        // CORE FRAMEWORK MASTER ARCHITECTURE CONFIGS
         let userProfile = { name: "User", age: 20, height: 177, weight: 53, bmi: 16.9, status: "Underweight Baseline Rating Index", goal: "Weight Gain", calorieTarget: 2800 };
         let totalDailyCaloriesLogged = 0;
         let scaleWeightHistoricalArray = [];
@@ -363,8 +366,23 @@
         }
 
         document.addEventListener("DOMContentLoaded", function() {
+            adjustBypassButtonTextBasedOnDeviceAgent();
             evaluateLocalPlatformMemoryOnStartup();
         });
+
+        // INTUITIVE DEVICE AGENT DETECTION CONTROLLER FOR WELCOME BACK CUSTOM TEXT
+        function adjustBypassButtonTextBasedOnDeviceAgent() {
+            const bypassBtn = document.getElementById('dynamic-bypass-trigger-btn');
+            const userAgentInfoString = navigator.userAgent || navigator.vendor || window.opera;
+
+            if (/android/i.test(userAgentInfoString)) {
+                bypassBtn.innerHTML = "👋 Welcome Back! (Android Quick-Pass)";
+            } else if (/iPad|iPhone|iPod/.test(userAgentInfoString) && !window.MSStream) {
+                bypassBtn.innerHTML = "👋 Welcome Back! (Safari Quick-Pass)";
+            } else {
+                bypassBtn.innerHTML = "👋 Welcome Back! (Instant Dashboard Entry)";
+            }
+        }
 
         function evaluateLocalPlatformMemoryOnStartup() {
             let cachedProfileString = null;
@@ -408,7 +426,6 @@
             }
         }
 
-        // HARDWIRED SAFARI BYPASS ACTION TRIGGER
         function bypassSafariWipeCycle() {
             userProfile = { name: "User", age: 20, height: 177, weight: 53, bmi: 16.9, status: "Optimal Healthy Mass Profile", goal: "Weight Gain", calorieTarget: 2800 };
             if(scaleWeightHistoricalArray.length === 0) {
@@ -545,7 +562,7 @@
         function copyGeminiPrompt(mealTypeSegment) {
             const promptInstructionPayloadString = `I am using a free fitness tracker application setup file. I am eating a meal item portion for ${mealTypeSegment}. Please analyze my selection item content parameters description and estimate its approximate raw energy values layout metric. Reply back to me strictly using this template output format so I can type it into my manual log window text box right away: [Food Item Description] | [Estimated Integer Numbers Only] kcal`;
             navigator.clipboard.writeText(promptInstructionPayloadString).then(() => {
-                alert(`📋 Smart Gemini Query Prompt template injected into clipboard successfully!`);
+                alert("📋 Smart Gemini Query Prompt template injected into clipboard successfully!");
             });
         }
 
