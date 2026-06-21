@@ -375,44 +375,49 @@
             try { cachedProfileString = localStorage.getItem('publicPlatformUserProfileData'); } catch (e) {}
             if (!cachedProfileString) { cachedProfileString = getCookieFallback('cookie_userProfile'); }
 
-            if (cachedProfileString) {
-                userProfile = JSON.parse(cachedProfileString);
-                
-                let cachedHistoryString = null;
-                try { cachedHistoryString = localStorage.getItem('publicPlatformWeightArrayData'); } catch(e){}
-                if (!cachedHistoryString) { cachedHistoryString = getCookieFallback('cookie_weightArray'); }
-                if (cachedHistoryString) scaleWeightHistoricalArray = JSON.parse(cachedHistoryString);
-                
-                let lastDateSavedString = null;
-                try { lastDateSavedString = localStorage.getItem('publicPlatformLastDateKey'); } catch(e){}
-                if (!lastDateSavedString) { lastDateSavedString = getCookieFallback('cookie_dateKey'); }
-                
-                const todayKeyString = getTodayDateStringKey();
-                
-                if (lastDateSavedString && lastDateSavedString !== todayKeyString) {
-                    totalDailyCaloriesLogged = 0;
-                    document.getElementById('timeline-logger-list').innerHTML = '';
-                    saveStateToBrowser();
-                } else {
-                    let calCountStr = null;
-                    try { calCountStr = localStorage.getItem('publicPlatformTotalDailyCaloriesCount'); } catch(e){}
-                    if (!calCountStr) { calCountStr = getCookieFallback('cookie_calCount'); }
-                    totalDailyCaloriesLogged = parseInt(calCountStr) || 0;
-
-                    let timelineHtml = null;
-                    try { timelineHtml = localStorage.getItem('publicPlatformDayEntriesListHTML'); } catch(e){}
-                    if (!timelineHtml) { timelineHtml = getCookieFallback('cookie_timelineHtml'); }
-                    document.getElementById('timeline-logger-list').innerHTML = timelineHtml || '';
-                }
-
-                launchDashboardMainWorkspace();
-            } else {
-                document.getElementById('onboarding-overlay').style.display = 'flex';
-                document.getElementById('app-content').style.display = 'none';
+            // SAFARI FALLBACK FORCING CORE: If cache properties vanished on background swipe close, initialize natively!
+            if (!cachedProfileString) {
+                userProfile = { name: "User", age: 20, height: 177, weight: 53, bmi: 16.9, status: "Underweight Baseline Rating Index", goal: "Weight Gain", calorieTarget: 2800 };
+                cachedProfileString = JSON.stringify(userProfile);
+                saveStateToBrowser();
             }
+
+            userProfile = JSON.parse(cachedProfileString);
+            
+            let cachedHistoryString = null;
+            try { cachedHistoryString = localStorage.getItem('publicPlatformWeightArrayData'); } catch(e){}
+            if (!cachedHistoryString) { cachedHistoryString = getCookieFallback('cookie_weightArray'); }
+            if (cachedHistoryString) scaleWeightHistoricalArray = JSON.parse(cachedHistoryString);
+            
+            let lastDateSavedString = null;
+            try { lastDateSavedString = localStorage.getItem('publicPlatformLastDateKey'); } catch(e){}
+            if (!lastDateSavedString) { lastDateSavedString = getCookieFallback('cookie_dateKey'); }
+            
+            const todayKeyString = getTodayDateStringKey();
+            
+            if (lastDateSavedString && lastDateSavedString !== todayKeyString) {
+                totalDailyCaloriesLogged = 0;
+                document.getElementById('timeline-logger-list').innerHTML = '';
+                saveStateToBrowser();
+            } else {
+                let calCountStr = null;
+                try { calCountStr = localStorage.getItem('publicPlatformTotalDailyCaloriesCount'); } catch(e){}
+                if (!calCountStr) { calCountStr = getCookieFallback('cookie_calCount'); }
+                totalDailyCaloriesLogged = parseInt(calCountStr) || 0;
+
+                let timelineHtml = null;
+                try { timelineHtml = localStorage.getItem('publicPlatformDayEntriesListHTML'); } catch(e){}
+                if (!timelineHtml) { timelineHtml = getCookieFallback('cookie_timelineHtml'); }
+                document.getElementById('timeline-logger-list').innerHTML = timelineHtml || '';
+            }
+
+            if(scaleWeightHistoricalArray.length === 0) {
+                scaleWeightHistoricalArray.push({ date: getTodayDateStringKey(), val: 53 });
+            }
+
+            launchDashboardMainWorkspace();
         }
 
-        // RESTORED STABLE DIRECT BYPASS PATHWAY FOR INSTANT SETUP SKIP
         function bypassSafariWipeCycle() {
             userProfile = { name: "User", age: 20, height: 177, weight: 53, bmi: 16.9, status: "Underweight Baseline Rating Index", goal: "Weight Gain", calorieTarget: 2800 };
             if(scaleWeightHistoricalArray.length === 0) {
