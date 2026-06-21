@@ -18,18 +18,11 @@
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         body { background-color: var(--bg-color); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
-        
-        /* SAFARI PROTECTION NAVIGATION TOP HEADER HUB */
-        .safari-bypass-bar {
-            background: #1e293b; border-bottom: 1px solid #334155; padding: 8px 15px;
-            display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem;
-        }
-        .bypass-btn { background: #475569; padding: 4px 10px; font-size: 0.75rem; width: auto; margin-top: 0; border-radius: 4px; }
 
-        /* FULL SCREEN OVERLAY ONBOARDING WIZARD - HIDDEN BY DEFAULT */
+        /* FULL SCREEN OVERLAY ONBOARDING WIZARD */
         #onboarding-overlay {
             position: fixed;
-            top: 40px; left: 0; width: 100%; height: calc(100% - 40px);
+            top: 0; left: 0; width: 100%; height: 100%;
             background-color: var(--bg-color);
             display: none; 
             justify-content: center;
@@ -59,6 +52,25 @@
         button { background-color: var(--accent); border: none; font-weight: bold; cursor: pointer; transition: 0.2s; margin-top: 10px; }
         button:hover { opacity: 0.9; transform: translateY(-1px); }
         
+        /* HUGE BYPASS BUTTON STYLE */
+        .massive-bypass-btn {
+            background: linear-gradient(135deg, #1e293b, #334155);
+            border: 2px dashed var(--accent-orange);
+            color: #fde047;
+            font-size: 1.1rem;
+            padding: 16px;
+            margin-top: 15px;
+            border-radius: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .massive-bypass-btn:hover {
+            background: linear-gradient(135deg, #334155, #475569);
+            border-color: #fde047;
+            color: #ffffff;
+        }
+
         .bmi-badge { background: #0f172a; padding: 15px; border-radius: 8px; border: 1px solid #334155; margin-bottom: 15px; text-align: center; }
         .bmi-number { font-size: 1.8rem; font-weight: bold; color: var(--accent-green); margin-bottom: 4px; }
         .bmi-status-text { font-size: 0.9rem; font-weight: bold; }
@@ -129,17 +141,12 @@
 </head>
 <body>
 
-    <div class="safari-bypass-bar">
-        <span style="color: var(--text-muted);">🔒 Safari Privacy Shield Active</span>
-        <button onclick="bypassSafariWipeCycle()" class="bypass-btn">🚀 Skip Form & Enter Dashboard</button>
-    </div>
-
     <div id="onboarding-overlay">
         <div class="wizard-card">
             
             <div id="step-1" class="wizard-step active">
                 <h2>📋 Profile Configuration</h2>
-                <p>Welcome! Configure your body composition metrics locally. All your configurations stay stored natively on this browser framework with absolute privacy.</p>
+                <p>Configure your composition metrics metrics locally. All properties stay stored natively inside your framework container with absolute privacy.</p>
                 
                 <div class="form-field">
                     <label>First Name</label>
@@ -158,6 +165,8 @@
                     <input type="number" id="ob-weight" placeholder="e.g., 68">
                 </div>
                 <button onclick="processOnboardingStepOne()">Evaluate Metrics & Next</button>
+
+                <button onclick="bypassSafariWipeCycle()" class="massive-bypass-btn">🚀 Force Enter Dashboard (Safari Bypass)</button>
 
                 <div style="margin-top: 20px; border-top: 1px dashed #475569; padding-top: 15px; text-align: center;">
                     <p style="font-size: 0.8rem; margin-bottom: 8px;">Returning User? Restore your tracking data backup file:</p>
@@ -316,7 +325,7 @@
     </div>
 
     <script>
-        // CORE FRAMEWORK PARAMETERS ARCHITECTURES
+        // CORE FRAMEWORK PROPERTIES
         let userProfile = { name: "User", age: 20, height: 177, weight: 53, bmi: 16.9, status: "Underweight Baseline Rating Index", goal: "Weight Gain", calorieTarget: 2800 };
         let totalDailyCaloriesLogged = 0;
         let scaleWeightHistoricalArray = [];
@@ -394,15 +403,13 @@
 
                 launchDashboardMainWorkspace();
             } else {
-                // If Safari blanked storage out, show onboarding but keep top shortcut open
                 document.getElementById('onboarding-overlay').style.display = 'flex';
                 document.getElementById('app-content').style.display = 'none';
             }
         }
 
-        // HARDWIRED SAFARI FORCE BYPASS FUNCTION LAYER
+        // HARDWIRED SAFARI BYPASS ACTION TRIGGER
         function bypassSafariWipeCycle() {
-            // Assign true functional targets right away to bypass form block fields
             userProfile = { name: "User", age: 20, height: 177, weight: 53, bmi: 16.9, status: "Optimal Healthy Mass Profile", goal: "Weight Gain", calorieTarget: 2800 };
             if(scaleWeightHistoricalArray.length === 0) {
                 scaleWeightHistoricalArray.push({ date: getTodayDateStringKey(), val: 53 });
