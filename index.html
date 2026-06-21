@@ -52,7 +52,7 @@
         button { background-color: var(--accent); border: none; font-weight: bold; cursor: pointer; transition: 0.2s; margin-top: 10px; }
         button:hover { opacity: 0.9; transform: translateY(-1px); }
         
-        /* CLEAN, PREMIUM WELCOME BACK ACTION NODE STYLE */
+        /* CLEAN, UNIVERSAL WELCOME BACK BUTTON STYLE */
         .massive-bypass-btn {
             background: linear-gradient(135deg, #0f172a, #1e293b);
             border: 2px solid var(--accent-green);
@@ -169,7 +169,7 @@
                 </div>
                 <button onclick="processOnboardingStepOne()">Evaluate Metrics & Next</button>
 
-                <button onclick="bypassSafariWipeCycle()" id="dynamic-bypass-trigger-btn" class="massive-bypass-btn">👋 Welcome Back! Quick Entry</button>
+                <button onclick="bypassSafariWipeCycle()" class="massive-bypass-btn">👋 Welcome Back! Enter Dashboard</button>
 
                 <div style="margin-top: 20px; border-top: 1px dashed #475569; padding-top: 15px; text-align: center;">
                     <p style="font-size: 0.8rem; margin-bottom: 8px;">Returning User? Restore your tracking data backup file:</p>
@@ -281,7 +281,7 @@
                     <div class="meal-box">
                         <div class="meal-header">
                             <span class="meal-title">🍿 Snacks & Extras</span>
-                            <a href="https://gemini.google.com" target="_blank" class="gemini-link" onclick="copyGeminiPrompt('Snack') text-decoration: none;">Don't know? Ask Gemini AI ↗</a>
+                            <a href="https://gemini.google.com" target="_blank" class="gemini-link" onclick="copyGeminiPrompt('Snack')">Don't know? Ask Gemini AI ↗</a>
                         </div>
                         <div class="meal-inputs">
                             <input type="text" id="food-snack-desc" placeholder="What did you eat?">
@@ -366,23 +366,8 @@
         }
 
         document.addEventListener("DOMContentLoaded", function() {
-            adjustBypassButtonTextBasedOnDeviceAgent();
             evaluateLocalPlatformMemoryOnStartup();
         });
-
-        // INTUITIVE DEVICE AGENT DETECTION CONTROLLER FOR WELCOME BACK CUSTOM TEXT
-        function adjustBypassButtonTextBasedOnDeviceAgent() {
-            const bypassBtn = document.getElementById('dynamic-bypass-trigger-btn');
-            const userAgentInfoString = navigator.userAgent || navigator.vendor || window.opera;
-
-            if (/android/i.test(userAgentInfoString)) {
-                bypassBtn.innerHTML = "👋 Welcome Back! (Android Quick-Pass)";
-            } else if (/iPad|iPhone|iPod/.test(userAgentInfoString) && !window.MSStream) {
-                bypassBtn.innerHTML = "👋 Welcome Back! (Safari Quick-Pass)";
-            } else {
-                bypassBtn.innerHTML = "👋 Welcome Back! (Instant Dashboard Entry)";
-            }
-        }
 
         function evaluateLocalPlatformMemoryOnStartup() {
             let cachedProfileString = null;
