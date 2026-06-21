@@ -117,6 +117,7 @@
 
         /* DATA MANAGEMENT BUTTONS */
         .clear-btn { background-color: var(--accent-red); font-size: 0.75rem; padding: 5px 10px; width: auto; margin-top: 15px; border-radius: 4px; }
+        .backup-btn { background-color: var(--accent-green); font-size: 0.75rem; padding: 5px 10px; width: auto; margin-top: 15px; border-radius: 4px; margin-right: 5px; color: white; }
     </style>
 </head>
 <body>
@@ -145,6 +146,12 @@
                     <input type="number" id="ob-weight" placeholder="e.g., 68">
                 </div>
                 <button onclick="processOnboardingStepOne()">Evaluate Metrics & Next</button>
+
+                <div style="margin-top: 20px; border-top: 1px dashed #475569; padding-top: 15px; text-align: center;">
+                    <p style="font-size: 0.8rem; margin-bottom: 8px;">Returning User? Restore your tracking data backup file:</p>
+                    <input type="file" id="onboarding-restore-file" accept=".json" style="display: none;" onchange="importDataBackupFile(event)">
+                    <button onclick="document.getElementById('onboarding-restore-file').click()" style="background: #475569; font-size: 0.85rem; margin-top: 0;">📂 Upload Backup File</button>
+                </div>
             </div>
 
             <div id="step-2" class="wizard-step">
@@ -284,7 +291,11 @@
                     <div id="monthly-summary-display-box" style="background:#0f172a; padding:12px; border-radius:8px; border:1px solid #334155; font-size:0.85rem; line-height:1.5;">
                         No baseline historical points logged inside this frame segment yet. Start logging weekly entries to build your evaluation index.
                     </div>
-                    <button onclick="wipeAllLocalPlatformCache()" class="clear-btn">Wipe Platform Account Cache Data</button>
+                    
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="exportDataBackupFile()" class="backup-btn">💾 Export Backup</button>
+                        <button onclick="wipeAllLocalPlatformCache()" class="clear-btn">Wipe Account Data</button>
+                    </div>
                 </div>
 
             </div>
@@ -455,7 +466,7 @@
                     alertElementBox.style.color = '#fca5a5';
                     alertElementBox.style.borderColor = 'var(--accent-red)';
                 } else {
-                    alertElementBox.innerHTML = `../../✅ Staying on track! You have <strong>${userProfile.calorieTarget - totalDailyCaloriesLogged} kcal</strong> remaining to consume for your weight loss target budget.`;
+                    alertElementBox.innerHTML = `✅ Staying on track! You have <strong>${userProfile.calorieTarget - totalDailyCaloriesLogged} kcal</strong> remaining to consume for your weight loss target budget.`;
                     alertElementBox.style.background = 'rgba(16, 185, 129, 0.15)';
                     alertElementBox.style.color = '#a7f3d0';
                     alertElementBox.style.borderColor = 'var(--accent-green)';
@@ -586,6 +597,55 @@
                 <div style="margin-bottom:8px;"><strong style="color:var(--accent);">Current Check Scale:</strong> ${latestCurrentRecordPoint.val} kg (${latestCurrentRecordPoint.date})</div>
                 <div style="border-top:1px solid #334155; padding-top:6px; font-weight:400; color:var(--text-main);">${evaluationSummaryDiagnosticMessageText}</div>
             `;
+        }
+
+        // PUBLIC PUBLIC EXPORT PROFILE FILE SYSTEM FUNCTIONS
+        function exportDataBackupFile() {
+            const backupPackageObject = {
+                profile: localStorage.getItem('publicPlatformUserProfileData'),
+                weightHistory: localStorage.getItem('publicPlatformWeightArrayData'),
+                caloriesCount: localStorage.getItem('publicPlatformTotalDailyCaloriesCount'),
+                entriesList: localStorage.getItem('publicPlatformDayEntriesListHTML'),
+                dateKey: localStorage.getItem('publicPlatformLastDateKey')
+            };
+
+            const convertJsonString = JSON.stringify(backupPackageObject, null, 2);
+            const dataBlobElement = new Blob([convertJsonString], { type: "application/json" });
+            const dynamicDownloadAnchorElement = document.createElement("a");
+
+            dynamicDownloadAnchorElement.href = URL.createObjectURL(dataBlobElement);
+            dynamicDownloadAnchorElement.download = `${userProfile.name || 'FitTrack'}_fitness_backup.json`;
+            document.body.appendChild(dynamicDownloadAnchorElement);
+            dynamicDownloadAnchorElement.click();
+            document.body.removeChild(dynamicDownloadAnchorElement);
+        }
+
+        function importDataBackupFile(event) {
+            const uploadedFileRef = event.target.files[0];
+            if (!uploadedFileRef) return;
+
+            const fileReadingEngine = new FileReader();
+            fileReadingEngine.onload = function(e) {
+                try {
+                    const parsedPackage = JSON.parse(e.target.result);
+                    
+                    if (parsedPackage.profile) {
+                        localStorage.setItem('publicPlatformUserProfileData', parsedPackage.profile);
+                        if(parsedPackage.weightHistory) localStorage.setItem('publicPlatformWeightArrayData', parsedPackage.weightHistory);
+                        if(parsedPackage.caloriesCount) localStorage.setItem('publicPlatformTotalDailyCaloriesCount', parsedPackage.caloriesCount);
+                        if(parsedPackage.entriesList) localStorage.setItem('publicPlatformDayEntriesListHTML', parsedPackage.entriesList);
+                        if(parsedPackage.dateKey) localStorage.setItem('publicPlatformLastDateKey', parsedPackage.dateKey);
+
+                        alert("🎉 Fitness data backup file fully restored successfully! Opening your tracking matrix dashboard...");
+                        window.location.reload();
+                    } else {
+                        alert("⚠️ Invalid backup file format target detected.");
+                    }
+                } catch (err) {
+                    alert("❌ Failed to parse data package structure.");
+                }
+            };
+            fileReadingEngine.readAsText(uploadedFileRef);
         }
 
         function getTodayDateStringKey() {
