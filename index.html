@@ -52,11 +52,11 @@
         button { background-color: var(--accent); border: none; font-weight: bold; cursor: pointer; transition: 0.2s; margin-top: 10px; }
         button:hover { opacity: 0.9; transform: translateY(-1px); }
         
-        /* CLEAN, UNIVERSAL WELCOME BACK BUTTON STYLE */
+        /* THE SECURED SESSION RESUME BUTTON STYLING */
         .massive-bypass-btn {
             background: linear-gradient(135deg, #0f172a, #1e293b);
-            border: 2px solid var(--accent-green);
-            color: #a7f3d0;
+            border: 2px solid #475569; /* Default neutral gray style */
+            color: var(--text-muted);
             font-size: 1.05rem;
             padding: 15px;
             margin-top: 15px;
@@ -67,8 +67,15 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
+            transition: all 0.3s ease;
         }
-        .massive-bypass-btn:hover {
+        /* Active layout states if data cache is discovered */
+        .massive-bypass-btn.has-data {
+            border-color: var(--accent-green);
+            color: #a7f3d0;
+            cursor: pointer;
+        }
+        .massive-bypass-btn.has-data:hover {
             background: linear-gradient(135deg, #1e293b, #334155);
             border-color: var(--accent);
             color: #ffffff;
@@ -169,7 +176,7 @@
                 </div>
                 <button onclick="processOnboardingStepOne()">Evaluate Metrics & Next</button>
 
-                <button onclick="bypassSafariWipeCycle()" class="massive-bypass-btn">👋 Welcome Back! Enter Dashboard</button>
+                <button onclick="attemptSessionBypassResume()" id="dynamic-bypass-trigger-btn" class="massive-bypass-btn">👋 Welcome Back! Resume Session</button>
 
                 <div style="margin-top: 20px; border-top: 1px dashed #475569; padding-top: 15px; text-align: center;">
                     <p style="font-size: 0.8rem; margin-bottom: 8px;">Returning User? Restore your tracking data backup file:</p>
@@ -328,10 +335,11 @@
     </div>
 
     <script>
-        // CORE FRAMEWORK MASTER ARCHITECTURE CONFIGS
+        // CORE FRAMEWORK MASTER CONFIGS
         let userProfile = { name: "User", age: 20, height: 177, weight: 53, bmi: 16.9, status: "Underweight Baseline Rating Index", goal: "Weight Gain", calorieTarget: 2800 };
         let totalDailyCaloriesLogged = 0;
         let scaleWeightHistoricalArray = [];
+        let internalDataStateCacheFound = false; // Security checking variable
 
         function setCookieFallback(key, value) {
             const expireDate = new Date();
@@ -375,6 +383,10 @@
             if (!cachedProfileString) { cachedProfileString = getCookieFallback('cookie_userProfile'); }
 
             if (cachedProfileString) {
+                // EXPLICIT CONFIRMATION: True data found in memory registers
+                internalDataStateCacheFound = true;
+                document.getElementById('dynamic-bypass-trigger-btn').classList.add('has-data');
+                
                 userProfile = JSON.parse(cachedProfileString);
                 
                 let cachedHistoryString = null;
@@ -406,18 +418,23 @@
 
                 launchDashboardMainWorkspace();
             } else {
+                // Clear state checker and display form configuration step
+                internalDataStateCacheFound = false;
+                document.getElementById('dynamic-bypass-trigger-btn').classList.remove('has-data');
                 document.getElementById('onboarding-overlay').style.display = 'flex';
                 document.getElementById('app-content').style.display = 'none';
             }
         }
 
-        function bypassSafariWipeCycle() {
-            userProfile = { name: "User", age: 20, height: 177, weight: 53, bmi: 16.9, status: "Optimal Healthy Mass Profile", goal: "Weight Gain", calorieTarget: 2800 };
-            if(scaleWeightHistoricalArray.length === 0) {
-                scaleWeightHistoricalArray.push({ date: getTodayDateStringKey(), val: 53 });
+        // SECURED ENTRY RESUME ENFORCEMENT NODE
+        function attemptSessionBypassResume() {
+            if (internalDataStateCacheFound) {
+                // True profile cache verified. Allow instant loading skip.
+                launchDashboardMainWorkspace();
+            } else {
+                // Deny unauthorized blank form access
+                alert("🔒 Access Denied: No previous session data found on this browser. Please fill out your target configuration profile parameters metrics above to create an account first!");
             }
-            saveStateToBrowser();
-            launchDashboardMainWorkspace();
         }
 
         function processOnboardingStepOne() {
@@ -479,6 +496,7 @@
             }
 
             saveStateToBrowser();
+            internalDataStateCacheFound = true; // Upgrade lock access level dynamically
             launchDashboardMainWorkspace();
         }
 
